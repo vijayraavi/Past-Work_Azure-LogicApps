@@ -1,0 +1,200 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Create_CombinedRows_Array": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CombinedRows",
+                            "type": "Array"
+                        }
+                    ]
+                },
+                "runAfter": {},
+                "type": "InitializeVariable"
+            },
+            "For_each": {
+                "actions": {
+                    "For_each_2": {
+                        "actions": {
+                            "For_each_3": {
+                                "actions": {
+                                    "Append_to_array_variable": {
+                                        "inputs": {
+                                            "name": "CombinedRows",
+                                            "value": "@items('For_each_3')"
+                                        },
+                                        "runAfter": {},
+                                        "type": "AppendToArrayVariable"
+                                    }
+                                },
+                                "foreach": "@items('For_each_2')",
+                                "runAfter": {},
+                                "type": "Foreach"
+                            }
+                        },
+                        "foreach": "@items('For_each')?['rows']",
+                        "runAfter": {},
+                        "type": "Foreach"
+                    }
+                },
+                "foreach": "@triggerBody()?['data']?['SearchResult']?['tables']",
+                "runAfter": {
+                    "Create_CombinedRows_Array": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "For_each_4": {
+                "actions": {
+                    "HTTP": {
+                        "inputs": {
+                            "body": {
+                                "Affected Resource": "@{outputs('Warp_CombinedRows_Array')}",
+                                "Alert_url": "@{triggerBody()?['data']?['LinkToSearchResults']}",
+                                "Entity_id": "@{triggerBody()?['data']?['AlertRuleName']} is @{triggerBody()?['data']?['Severity']}",
+                                "Threshold Operator": "@{triggerBody()?['data']?['AlertThresholdOperator']}",
+                                "Threshold Value": "@{triggerBody()?['data']?['AlertThresholdValue']}",
+                                "Time Generated": "@{triggerBody()?['data']?['SearchIntervalStartTimeUtc']}",
+                                "message_type": "CRITICAL",
+                                "monitoring_tool": "Azure OMS",
+                                "search query": "@{triggerBody()?['data']?['SearchQuery']}",
+                                "state_message": "@{triggerBody()?['data']?['Description']}"
+                            },
+                            "method": "POST",
+                            "uri": "https://alert.victorops.com/integrations/generic/20131114/alert/<ID>"
+                        },
+                        "runAfter": {},
+                        "type": "Http"
+                    }
+                },
+                "foreach": "@triggerBody()?['data']?['SearchResult']?['tables']",
+                "runAfter": {
+                    "Warp_CombinedRows_Array": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "Warp_CombinedRows_Array": {
+                "inputs": "@variables('CombinedRows')",
+                "runAfter": {
+                    "For_each": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Compose"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {},
+        "triggers": {
+            "manual": {
+                "inputs": {
+                    "schema": {
+                        "properties": {
+                            "data": {
+                                "properties": {
+                                    "AlertRuleName": {
+                                        "type": "string"
+                                    },
+                                    "AlertThresholdOperator": {
+                                        "type": "string"
+                                    },
+                                    "AlertThresholdValue": {
+                                        "type": "integer"
+                                    },
+                                    "Description": {
+                                        "type": "string"
+                                    },
+                                    "LinkToSearchResults": {
+                                        "type": "string"
+                                    },
+                                    "ResultCount": {
+                                        "type": "integer"
+                                    },
+                                    "SearchIntervalEndtimeUtc": {
+                                        "type": "string"
+                                    },
+                                    "SearchIntervalInSeconds": {
+                                        "type": "integer"
+                                    },
+                                    "SearchIntervalStartTimeUtc": {
+                                        "type": "string"
+                                    },
+                                    "SearchQuery": {
+                                        "type": "string"
+                                    },
+                                    "SearchResult": {
+                                        "properties": {
+                                            "tables": {
+                                                "items": {
+                                                    "properties": {
+                                                        "columns": {
+                                                            "items": {
+                                                                "properties": {
+                                                                    "name": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "type": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "name",
+                                                                    "type"
+                                                                ],
+                                                                "type": "object"
+                                                            },
+                                                            "type": "array"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        },
+                                                        "rows": {
+                                                            "items": {
+                                                                "items": {
+                                                                    "type": "string"
+                                                                },
+                                                                "type": "array"
+                                                            },
+                                                            "type": "array"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "name",
+                                                        "columns",
+                                                        "rows"
+                                                    ],
+                                                    "type": "object"
+                                                },
+                                                "type": "array"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "Severity": {
+                                        "type": "string"
+                                    },
+                                    "WorkspaceId": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "schemaId": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "kind": "Http",
+                "type": "Request"
+            }
+        }
+    }
+}

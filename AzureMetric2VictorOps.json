@@ -1,0 +1,473 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Check_for_Deactivated_Status": {
+                "actions": {
+                    "Mark_Succeeded_(Status)_(Deactivated)": {
+                        "inputs": {
+                            "runStatus": "Succeeded"
+                        },
+                        "runAfter": {
+                            "REST_to_VictorOps_(Status)_(Deactivated)": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "Terminate"
+                    },
+                    "REST_to_VictorOps_(Status)_(Deactivated)": {
+                        "inputs": {
+                            "body": {
+                                "entity_id": "@{triggerBody()?['data']?['context']?['name']} has a Severity Lvl @{triggerBody()?['data']?['context']?['severity']}",
+                                "message_type": "RECOVERY"
+                            },
+                            "method": "POST",
+                            "uri": "https://alert.victorops.com/integrations/generic/20131014/alert/<ID>"
+                        },
+                        "runAfter": {},
+                        "type": "Http"
+                    }
+                },
+                "expression": {
+                    "and": [
+                        {
+                            "equals": [
+                                "@triggerBody()?['data']?['status']",
+                                "Deactivated"
+                            ]
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Filter_to_Workspaces": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "If"
+            },
+            "Checking_for_null_or_*": {
+                "actions": {
+                    "Terminate_(Null_or_*)": {
+                        "inputs": {
+                            "runError": {
+                                "message": "Detected a Null or *"
+                            },
+                            "runStatus": "Failed"
+                        },
+                        "runAfter": {},
+                        "type": "Terminate"
+                    }
+                },
+                "else": {
+                    "actions": {
+                        "REST_to_VictorOps_(Checked_for_null_or_*)": {
+                            "inputs": {
+                                "body": {
+                                    "Affected Resource": "@{variables('CombinedValues')}",
+                                    "Threshold Operator": "@{variables('Operator')}",
+                                    "Threshold Value": "@{variables('Threshold')}",
+                                    "Time Generated": "@{triggerBody()?['data']?['context']?['timestamp']}",
+                                    "alert_url": "@{triggerBody()?['data']?['context']?['portalLink']}",
+                                    "entity_id": "@{triggerBody()?['data']?['context']?['name']} has a Severity Lvl @{triggerBody()?['data']?['context']?['severity']}",
+                                    "message_type": "CRITICAL",
+                                    "metric": "@{variables('MetricName')}",
+                                    "monitoring_tool": "Azure OMS",
+                                    "state_message": "@{triggerBody()?['data']?['context']?['description']}"
+                                },
+                                "method": "POST",
+                                "uri": "https://alert.victorops.com/integrations/generic/20131014/alert/<ID>"
+                            },
+                            "runAfter": {},
+                            "type": "Http"
+                        }
+                    }
+                },
+                "expression": {
+                    "or": [
+                        {
+                            "equals": [
+                                "@variables('MetricValue')",
+                                null
+                            ]
+                        },
+                        {
+                            "contains": [
+                                "@outputs('Wrap_CombinedValues')",
+                                "*"
+                            ]
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Check_for_Deactivated_Status": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "If"
+            },
+            "Filter_to_Computer_Names_Only": {
+                "inputs": {
+                    "from": "@variables('CombinedValues')",
+                    "where": "@contains(item(), 'skyscanner.local')"
+                },
+                "runAfter": {
+                    "Wrap_Severity": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Query"
+            },
+            "Filter_to_Workspaces": {
+                "inputs": {
+                    "from": "@variables('CombinedValues')",
+                    "where": "@contains(item(), '/subscriptions/')"
+                },
+                "runAfter": {
+                    "Filter_to_Computer_Names_Only": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Query"
+            },
+            "For_each": {
+                "actions": {
+                    "Loop_Dimension_Array": {
+                        "actions": {
+                            "Append_to_CombinedValues_array": {
+                                "inputs": {
+                                    "name": "CombinedValues",
+                                    "value": "@items('Loop_Dimension_Array')?['value']"
+                                },
+                                "runAfter": {},
+                                "type": "AppendToArrayVariable"
+                            }
+                        },
+                        "foreach": "@items('For_each')?['dimensions']",
+                        "runAfter": {
+                            "Set_Threshold": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "Foreach"
+                    },
+                    "Set_MetricName": {
+                        "inputs": {
+                            "name": "MetricName",
+                            "value": "@items('For_each')?['metricName']"
+                        },
+                        "runAfter": {},
+                        "type": "SetVariable"
+                    },
+                    "Set_MetricValue": {
+                        "inputs": {
+                            "name": "MetricValue",
+                            "value": "@items('For_each')?['metricValue']"
+                        },
+                        "runAfter": {
+                            "Set_MetricName": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
+                    },
+                    "Set_Operator": {
+                        "inputs": {
+                            "name": "Operator",
+                            "value": "@items('For_each')?['operator']"
+                        },
+                        "runAfter": {
+                            "Set_MetricValue": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
+                    },
+                    "Set_Threshold": {
+                        "inputs": {
+                            "name": "Threshold",
+                            "value": "@items('For_each')?['threshold']"
+                        },
+                        "runAfter": {
+                            "Set_Operator": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
+                    }
+                },
+                "foreach": "@triggerBody()?['data']?['context']?['condition']?['allOf']",
+                "runAfter": {
+                    "Initialize_MetricValue": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "Initialize_CombinedValues": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "CombinedValues",
+                            "type": "Array"
+                        }
+                    ]
+                },
+                "runAfter": {},
+                "type": "InitializeVariable"
+            },
+            "Initialize_DeactivatedAnswer": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "DeactivatedAnswer",
+                            "type": "String"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_ErrorAnswer": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Initialize_ErrorAnswer": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "ErrorAnswer",
+                            "type": "String"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_CombinedValues": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Initialize_MetricName": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "MetricName",
+                            "type": "String"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_DeactivatedAnswer": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Initialize_MetricValue": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "MetricValue",
+                            "type": "Float"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_Threshold": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Initialize_Operator": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Operator",
+                            "type": "String"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_MetricName": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Initialize_Threshold": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Threshold",
+                            "type": "String"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_Operator": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Wrap_CombinedValues": {
+                "inputs": "@variables('CombinedValues')",
+                "runAfter": {
+                    "For_each": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Compose"
+            },
+            "Wrap_Severity": {
+                "inputs": "@triggerBody()?['data']?['context']?['severity']",
+                "runAfter": {
+                    "Wrap_CombinedValues": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Compose"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {},
+        "triggers": {
+            "manual": {
+                "inputs": {
+                    "schema": {
+                        "properties": {
+                            "data": {
+                                "properties": {
+                                    "context": {
+                                        "properties": {
+                                            "condition": {
+                                                "properties": {
+                                                    "allOf": {
+                                                        "items": {
+                                                            "properties": {
+                                                                "dimensions": {
+                                                                    "items": {
+                                                                        "properties": {
+                                                                            "name": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "value": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "name",
+                                                                            "value"
+                                                                        ],
+                                                                        "type": "object"
+                                                                    },
+                                                                    "type": "array"
+                                                                },
+                                                                "metricName": {
+                                                                    "type": "string"
+                                                                },
+                                                                "metricValue": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "operator": {
+                                                                    "type": "string"
+                                                                },
+                                                                "threshold": {
+                                                                    "type": "string"
+                                                                },
+                                                                "timeAggregation": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "metricName",
+                                                                "dimensions",
+                                                                "operator",
+                                                                "threshold",
+                                                                "timeAggregation",
+                                                                "metricValue"
+                                                            ],
+                                                            "type": "object"
+                                                        },
+                                                        "type": "array"
+                                                    },
+                                                    "windowSize": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            "conditionType": {
+                                                "type": "string"
+                                            },
+                                            "description": {
+                                                "type": "string"
+                                            },
+                                            "id": {
+                                                "type": "string"
+                                            },
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "portalLink": {
+                                                "type": "string"
+                                            },
+                                            "resourceGroupName": {
+                                                "type": "string"
+                                            },
+                                            "resourceId": {
+                                                "type": "string"
+                                            },
+                                            "resourceName": {
+                                                "type": "string"
+                                            },
+                                            "resourceType": {
+                                                "type": "string"
+                                            },
+                                            "severity": {
+                                                "type": "string"
+                                            },
+                                            "subscriptionId": {
+                                                "type": "string"
+                                            },
+                                            "timestamp": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "properties": {
+                                        "properties": {
+                                            "key1": {
+                                                "type": "string"
+                                            },
+                                            "key2": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "status": {
+                                        "type": "string"
+                                    },
+                                    "version": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "schemaId": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "kind": "Http",
+                "type": "Request"
+            }
+        }
+    }
+}

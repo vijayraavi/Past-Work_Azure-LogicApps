@@ -1,0 +1,370 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Delay": {
+                "inputs": {
+                    "interval": {
+                        "count": 3,
+                        "unit": "Minute"
+                    }
+                },
+                "runAfter": {},
+                "type": "Wait"
+            },
+            "For_each": {
+                "actions": {
+                    "Case_(Status)": {
+                        "cases": {
+                            "Status_(Failed)": {
+                                "actions": {
+                                    "Post_to_Slack_(Status)_(Failed)": {
+                                        "inputs": {
+                                            "body": {
+                                                "attachments": [
+                                                    {
+                                                        "author_name": "Powershell Script: UpdateManagement-REST2Slack",
+                                                        "color": "#ffbf00",
+                                                        "fields": [
+                                                            {
+                                                                "title": "Status",
+                                                                "value": "@{items('For_each')?['properties']?['status']}"
+                                                            },
+                                                            {
+                                                                "title": "Update Deployment Name",
+                                                                "value": "@{items('For_each')?['properties']?['softwareUpdateConfiguration']?['name']}"
+                                                            },
+                                                            {
+                                                                "short": true,
+                                                                "title": "Computer Count",
+                                                                "value": "@{items('For_each')?['properties']?['computerCount']}"
+                                                            },
+                                                            {
+                                                                "short": true,
+                                                                "title": "Failed Computer Count",
+                                                                "value": "@{items('For_each')?['properties']?['failedCount']}"
+                                                            },
+                                                            {
+                                                                "title": "Id",
+                                                                "value": "@{items('For_each')?['id']}"
+                                                            }
+                                                        ],
+                                                        "footer": "Slack API (Last <Squad> Modification)",
+                                                        "footer_icon": "https://platform.slack-edge.com/img/default_application_icon.png",
+                                                        "image_url": "http://my-website.com/path/to/image.jpg",
+                                                        "mrkdwn_in": [
+                                                            "fields"
+                                                        ],
+                                                        "pretext": "Squad's monitoring bot that uses REST",
+                                                        "text": "Documentation in the link above\n------------------------------------",
+                                                        "thumb_url": "http://example.com/path/to/thumb.png",
+                                                        "title": "<Squad> Monitoring",
+                                                        "title_link": "<URL>",
+                                                        "ts": "1546651701"
+                                                    }
+                                                ]
+                                            },
+                                            "method": "POST",
+                                            "uri": "https://hooks.slack.com/services/T03PH6RD0/BFK7Q3010/<ID>"
+                                        },
+                                        "runAfter": {},
+                                        "type": "Http"
+                                    }
+                                },
+                                "case": "Failed"
+                            },
+                            "Status_(Succeeded)": {
+                                "actions": {
+                                    "Post_to_Slack_(Status)_(Succeeded)": {
+                                        "inputs": {
+                                            "body": {
+                                                "attachments": [
+                                                    {
+                                                        "author_name": "Powershell Script: UpdateManagement-REST2Slack",
+                                                        "color": "#00cd00",
+                                                        "fields": [
+                                                            {
+                                                                "title": "Status",
+                                                                "value": "@{items('For_each')?['properties']?['status']}"
+                                                            },
+                                                            {
+                                                                "title": "Update Deployment Name",
+                                                                "value": "@{items('For_each')?['properties']?['softwareUpdateConfiguration']?['name']}"
+                                                            },
+                                                            {
+                                                                "short": true,
+                                                                "title": "Computer Count",
+                                                                "value": "@{items('For_each')?['properties']?['computerCount']}"
+                                                            },
+                                                            {
+                                                                "short": true,
+                                                                "title": "Failed Computer Count",
+                                                                "value": "@{items('For_each')?['properties']?['failedCount']}"
+                                                            }
+                                                        ],
+                                                        "footer": "Slack API (Last <Squad> Modification)",
+                                                        "footer_icon": "https://platform.slack-edge.com/img/default_application_icon.png",
+                                                        "image_url": "http://my-website.com/path/to/image.jpg",
+                                                        "mrkdwn_in": [
+                                                            "fields"
+                                                        ],
+                                                        "pretext": "Squad's monitoring bot that uses REST",
+                                                        "text": "Documentation in the link above\n------------------------------------",
+                                                        "thumb_url": "http://example.com/path/to/thumb.png",
+                                                        "title": "<Squad> Monitoring",
+                                                        "title_link": "<ID>",
+                                                        "ts": "1546651701"
+                                                    }
+                                                ]
+                                            },
+                                            "method": "POST",
+                                            "uri": "https://hooks.slack.com/services/T03PH6RD0/BFK7Q3010/<ID>"
+                                        },
+                                        "runAfter": {},
+                                        "type": "Http"
+                                    }
+                                },
+                                "case": "Succeeded"
+                            }
+                        },
+                        "default": {
+                            "actions": {
+                                "Post_to_Slack_(Default)": {
+                                    "inputs": {
+                                        "body": {
+                                            "attachments": [
+                                                {
+                                                    "author_name": "Powershell Script: UpdateManagement-REST2Slack",
+                                                    "color": "#A9A9A9",
+                                                    "fields": [
+                                                        {
+                                                            "title": "Status",
+                                                            "value": "@{items('For_each')?['properties']?['status']}"
+                                                        },
+                                                        {
+                                                            "title": "Update Deployment Name",
+                                                            "value": "@{items('For_each')?['properties']?['softwareUpdateConfiguration']?['name']}"
+                                                        },
+                                                        {
+                                                            "short": true,
+                                                            "title": "Computer Count",
+                                                            "value": "@{items('For_each')?['properties']?['computerCount']}"
+                                                        },
+                                                        {
+                                                            "short": true,
+                                                            "title": "Failed Computer Count",
+                                                            "value": "@{items('For_each')?['properties']?['failedCount']}"
+                                                        }
+                                                    ],
+                                                    "footer": "Slack API (Last <Squad> Modification)",
+                                                    "footer_icon": "https://platform.slack-edge.com/img/default_application_icon.png",
+                                                    "image_url": "http://my-website.com/path/to/image.jpg",
+                                                    "mrkdwn_in": [
+                                                        "fields"
+                                                    ],
+                                                    "pretext": "Squad's monitoring bot that uses REST",
+                                                    "text": "Documentation in the link above\n------------------------------------",
+                                                    "thumb_url": "http://example.com/path/to/thumb.png",
+                                                    "title": "<Squad> Monitoring",
+                                                    "title_link": "<URL>",
+                                                    "ts": "1546651701"
+                                                }
+                                            ]
+                                        },
+                                        "method": "POST",
+                                        "uri": "https://hooks.slack.com/services/T03PH6RD0/BFK7Q3010/<ID>"
+                                    },
+                                    "runAfter": {},
+                                    "type": "Http"
+                                }
+                            }
+                        },
+                        "expression": "@items('For_each')?['properties']?['status']",
+                        "runAfter": {},
+                        "type": "Switch"
+                    }
+                },
+                "foreach": "@body('Parse_Update_Run')?['value']",
+                "runAfter": {
+                    "Parse_Update_Run": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "Get_Bearer_Token": {
+                "inputs": {
+                    "body": "grant_type=client_credentials&client_id=3<ID>&client_secret=<Secret>&resource=https://management.azure.com",
+                    "headers": {
+                        "Cache-Control": "no-cache",
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "Host": "login.microsoftonline.com"
+                    },
+                    "method": "POST",
+                    "uri": "https://login.microsoftonline.com/<Sub>/oauth2/token"
+                },
+                "runAfter": {
+                    "Delay": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Http"
+            },
+            "Get_Update_Run": {
+                "inputs": {
+                    "headers": {
+                        "Authorization": "@{body('Parse_JSON')['token_type']} @{body('Parse_JSON')['access_token']}",
+                        "Content-Type": "application/json"
+                    },
+                    "method": "GET",
+                    "uri": "@triggerBody()?['Uri']"
+                },
+                "runAfter": {
+                    "Parse_JSON": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Http"
+            },
+            "Parse_JSON": {
+                "inputs": {
+                    "content": "@body('Get_Bearer_Token')",
+                    "schema": {
+                        "properties": {
+                            "access_token": {
+                                "type": "string"
+                            },
+                            "expires_in": {
+                                "type": "string"
+                            },
+                            "expires_on": {
+                                "type": "string"
+                            },
+                            "ext_expires_in": {
+                                "type": "string"
+                            },
+                            "not_before": {
+                                "type": "string"
+                            },
+                            "resource": {
+                                "type": "string"
+                            },
+                            "token_type": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "runAfter": {
+                    "Get_Bearer_Token": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ParseJson"
+            },
+            "Parse_Update_Run": {
+                "inputs": {
+                    "content": "@body('Get_Update_Run')",
+                    "schema": {
+                        "properties": {
+                            "value": {
+                                "items": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "properties": {
+                                            "properties": {
+                                                "computerCount": {
+                                                    "type": "integer"
+                                                },
+                                                "configuredDuration": {
+                                                    "type": "string"
+                                                },
+                                                "creationTime": {
+                                                    "type": "string"
+                                                },
+                                                "endTime": {
+                                                    "type": "string"
+                                                },
+                                                "error": {},
+                                                "failedCount": {
+                                                    "type": "integer"
+                                                },
+                                                "lastModifiedBy": {},
+                                                "lastModifiedTime": {
+                                                    "type": "string"
+                                                },
+                                                "osType": {
+                                                    "type": "string"
+                                                },
+                                                "softwareUpdateConfiguration": {
+                                                    "properties": {
+                                                        "name": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "startTime": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "tasks": {}
+                                            },
+                                            "type": "object"
+                                        },
+                                        "type": {}
+                                    },
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "type",
+                                        "properties"
+                                    ],
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "runAfter": {
+                    "Get_Update_Run": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ParseJson"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {},
+        "triggers": {
+            "manual": {
+                "inputs": {
+                    "schema": {
+                        "properties": {
+                            "Uri": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "kind": "Http",
+                "type": "Request"
+            }
+        }
+    }
+}
